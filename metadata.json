@@ -1,0 +1,6 @@
+{
+  "name": "Synapse",
+  "description": "Synapse — 面向短视频与自媒体创作者的现代化莫兰迪暗色系三段式创作工作台，支持树状多分支策划脑暴、云端与本地素材分析、联网事实核查与风险体检、局部划选脚本微调以及导演级分镜拆解与一键打包导出。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

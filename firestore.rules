@@ -1,0 +1,196 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Primitive Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Blueprints ---
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid == userId && data.uid == request.auth.uid && isValidId(data.uid)
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 256
+        && data.displayName is string && data.displayName.size() <= 120
+        && data.photoURL is string && data.photoURL.size() <= 512
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidStage1Map(s1) {
+      return s1 is map
+        && s1.keys().hasAll(['searchGroundingEnabled', 'messages', 'branches', 'activeBranchId', 'riskAudit'])
+        && s1.keys().hasOnly(['searchGroundingEnabled', 'messages', 'branches', 'activeBranchId', 'riskAudit'])
+        && s1.searchGroundingEnabled is bool
+        && s1.messages is list && s1.messages.size() <= 100
+        && (s1.messages.size() == 0 || s1.messages[0] is map)
+        && s1.branches is list && s1.branches.size() <= 30
+        && (s1.branches.size() == 0 || s1.branches[0] is map)
+        && (s1.activeBranchId == null || (s1.activeBranchId is string && s1.activeBranchId.size() <= 128))
+        && (s1.riskAudit == null || s1.riskAudit is map);
+    }
+
+    function isValidStage2Map(s2) {
+      return s2 is map
+        && s2.keys().hasAll(['brief', 'scriptContent', 'editHistory'])
+        && s2.keys().hasOnly(['brief', 'scriptContent', 'editHistory'])
+        && (s2.brief == null || s2.brief is map)
+        && s2.scriptContent is string && s2.scriptContent.size() <= 30000
+        && s2.editHistory is list && s2.editHistory.size() <= 100
+        && (s2.editHistory.size() == 0 || s2.editHistory[0] is map);
+    }
+
+    function isValidStage3Map(s3) {
+      return s3 is map
+        && s3.keys().hasAll(['activeVisualLockId', 'customVisualLockSuffix', 'shots'])
+        && s3.keys().hasOnly(['activeVisualLockId', 'customVisualLockSuffix', 'shots'])
+        && (s3.activeVisualLockId == null || (s3.activeVisualLockId is string && s3.activeVisualLockId.size() <= 64))
+        && s3.customVisualLockSuffix is string && s3.customVisualLockSuffix.size() <= 500
+        && s3.shots is list && s3.shots.size() <= 60
+        && (s3.shots.size() == 0 || s3.shots[0] is map);
+    }
+
+    function isValidCreatorProject(data, userId, projectId) {
+      return data.keys().hasAll([
+          'id', 'ownerUid', 'name', 'platform', 'topic', 'currentStage',
+          'updatedAtLabel', 'stage1', 'stage2', 'stage3', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerUid', 'name', 'platform', 'topic', 'currentStage',
+          'updatedAtLabel', 'stage1', 'stage2', 'stage3', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id == projectId && isValidId(data.id)
+        && data.ownerUid is string && data.ownerUid == userId && data.ownerUid == request.auth.uid
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.platform is string && data.platform.size() >= 1 && data.platform.size() <= 120
+        && data.topic is string && data.topic.size() >= 1 && data.topic.size() <= 500
+        && data.currentStage is int && data.currentStage >= 1 && data.currentStage <= 3
+        && data.updatedAtLabel is string && data.updatedAtLabel.size() <= 40
+        && isValidStage1Map(data.stage1)
+        && isValidStage2Map(data.stage2)
+        && isValidStage3Map(data.stage3)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidChatMessage(data, userId, threadId, messageId) {
+      return data.keys().hasAll([
+          'id', 'ownerUid', 'projectId', 'role', 'personaId', 'modelName', 'content', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'ownerUid', 'projectId', 'role', 'personaId', 'modelName', 'content', 'createdAt'
+        ])
+        && data.id is string && data.id == messageId && isValidId(data.id)
+        && data.ownerUid is string && data.ownerUid == userId && data.ownerUid == request.auth.uid
+        && data.projectId is string && data.projectId == threadId && isValidId(data.projectId)
+        && data.role in ['user', 'model']
+        && data.personaId is string && data.personaId.size() >= 1 && data.personaId.size() <= 64
+        && data.modelName is string && data.modelName.size() >= 1 && data.modelName.size() <= 64
+        && data.content is string && data.content.size() >= 1 && data.content.size() <= 20000
+        && data.createdAt is timestamp;
+    }
+
+    // --- /test/connection probe document ---
+    match /test/connection {
+      allow get: if false;
+      allow list, write: if false;
+    }
+
+    // --- /users/{userId} (PII strictly owner-only) ---
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'photoURL', 'updatedAt']);
+      allow delete: if false;
+
+      // --- /users/{userId}/projects/{projectId} ---
+      match /projects/{projectId} {
+        allow get: if isValidId(userId) && isValidId(projectId) && isOwner(userId);
+        allow list: if isValidId(userId)
+          && isOwner(userId)
+          && existing().ownerUid == request.auth.uid;
+        allow create: if isValidId(userId)
+          && isValidId(projectId)
+          && isOwner(userId)
+          && isValidCreatorProject(incoming(), userId, projectId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if isValidId(userId)
+          && isValidId(projectId)
+          && isOwner(userId)
+          && isValidCreatorProject(incoming(), userId, projectId)
+          && incoming().id == existing().id
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            // Action 1: Switch active stage
+            incoming().diff(existing()).affectedKeys().hasOnly(['currentStage', 'updatedAtLabel', 'updatedAt'])
+            // Action 2: Sync project workspace edits
+            || incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'platform', 'topic', 'currentStage', 'updatedAtLabel', 'stage1', 'stage2', 'stage3', 'updatedAt'
+            ])
+          );
+        allow delete: if isValidId(userId) && isValidId(projectId) && isOwner(userId);
+      }
+
+      // --- /users/{userId}/chatThreads/{threadId}/messages/{messageId} ---
+      match /chatThreads/{threadId}/messages/{messageId} {
+        allow get: if isValidId(userId) && isValidId(threadId) && isValidId(messageId) && isOwner(userId);
+        allow list: if isValidId(userId)
+          && isValidId(threadId)
+          && isOwner(userId)
+          && existing().ownerUid == request.auth.uid
+          && existing().projectId == threadId;
+        allow create: if isValidId(userId)
+          && isValidId(threadId)
+          && isValidId(messageId)
+          && isOwner(userId)
+          && isValidChatMessage(incoming(), userId, threadId, messageId)
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(threadId) && isValidId(messageId) && isOwner(userId);
+      }
+    }
+  }
+}

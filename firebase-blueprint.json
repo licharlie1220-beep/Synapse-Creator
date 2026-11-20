@@ -1,0 +1,198 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated creator profile isolated under /users/{userId}.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "displayName", "photoURL", "createdAt", "updatedAt"]
+    },
+    "CreatorProject": {
+      "title": "CreatorProject",
+      "description": "Three-stage short-video creator project owned by a single verified user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "platform": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "currentStage": {
+          "type": "integer"
+        },
+        "updatedAtLabel": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "stage1": {
+          "type": "object"
+        },
+        "stage2": {
+          "type": "object"
+        },
+        "stage3": {
+          "type": "object"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "name",
+        "platform",
+        "topic",
+        "currentStage",
+        "updatedAtLabel",
+        "stage1",
+        "stage2",
+        "stage3",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Multi-turn Gemini chatbot conversation message persisted per project.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "projectId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"]
+        },
+        "personaId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "modelName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "projectId",
+        "role",
+        "personaId",
+        "modelName",
+        "content",
+        "createdAt"
+      ]
+    },
+    "ConnectionProbe": {
+      "title": "ConnectionProbe",
+      "description": "Health check path probed on boot via getDocFromServer.",
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "maxLength": 32
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private creator user profile storing PII isolated by owner UID."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/CreatorProject" },
+      "description": "User-owned three-stage creator workbench projects stored as native maps and lists."
+    },
+    "/users/{userId}/chatThreads/{threadId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Multi-turn Gemini chatbot thread messages scoped to a project and user."
+    },
+    "/test/connection": {
+      "schema": { "$ref": "#/entities/ConnectionProbe" },
+      "description": "Startup Firestore server connectivity probe document (locked down)."
+    }
+  }
+}

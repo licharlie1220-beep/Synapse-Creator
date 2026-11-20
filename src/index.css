@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: "Plus Jakarta Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --font-sans: "DM Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --morandi-bg: #1D1F22;
+    --morandi-surface: #24272B;
+    --morandi-elevated: #2B2E33;
+    --morandi-well: #191B1E;
+    --morandi-ink: #E6E1DA;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    font-family: var(--font-sans);
+    background-color: var(--morandi-bg);
+    color: var(--morandi-ink);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtle Morandi dark workspace scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(230, 225, 218, 0.16);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(230, 225, 218, 0.28);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- Synapse UI Tone Customization System --- */
+html[data-tone="obsidian"],
+html[data-tone="obsidian"] body,
+html[data-tone="obsidian"] #root {
+  background-color: #0E0F12 !important;
+}
+html[data-tone="obsidian"] [class*="bg-[#1D1F22]"] {
+  background-color: #0E0F12 !important;
+}
+html[data-tone="obsidian"] [class*="bg-[#24272B]"] {
+  background-color: #16181C !important;
+}
+html[data-tone="obsidian"] [class*="bg-[#2B2E33]"] {
+  background-color: #202329 !important;
+}
+html[data-tone="obsidian"] [class*="bg-[#191B1E]"] {
+  background-color: #111216 !important;
+}
+
+html[data-tone="midnight"],
+html[data-tone="midnight"] body,
+html[data-tone="midnight"] #root {
+  background-color: #121824 !important;
+}
+html[data-tone="midnight"] [class*="bg-[#1D1F22]"] {
+  background-color: #121824 !important;
+}
+html[data-tone="midnight"] [class*="bg-[#24272B]"] {
+  background-color: #182030 !important;
+}
+html[data-tone="midnight"] [class*="bg-[#2B2E33]"] {
+  background-color: #222C42 !important;
+}
+html[data-tone="midnight"] [class*="bg-[#191B1E]"] {
+  background-color: #0F141F !important;
+}
+
+html[data-tone="slate"],
+html[data-tone="slate"] body,
+html[data-tone="slate"] #root {
+  background-color: #161A1D !important;
+}
+html[data-tone="slate"] [class*="bg-[#1D1F22]"] {
+  background-color: #161A1D !important;
+}
+html[data-tone="slate"] [class*="bg-[#24272B]"] {
+  background-color: #1E2327 !important;
+}
+html[data-tone="slate"] [class*="bg-[#2B2E33]"] {
+  background-color: #282F34 !important;
+}
+html[data-tone="slate"] [class*="bg-[#191B1E]"] {
+  background-color: #131618 !important;
+}
